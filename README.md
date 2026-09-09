@@ -1,5 +1,5 @@
 # Mission12B
-Projektarbeit, LF12, Kurs- &amp; 
+Projektarbeiten
 
 Projekt1: FitFuerInfo 
-- Raum-Verwaltungsssoftware
+- Kurs- & Raum-Verwaltungsssoftware
