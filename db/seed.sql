@@ -2,15 +2,20 @@ USE fitfuerinfo;
 
 -- ============================================================
 -- Testdaten
--- Passwort für alle Testkonten: "test1"
+-- Passwort für die vier bestehenden Testkonten: "test1"
 -- (Hash von password_hash('test1', PASSWORD_DEFAULT))
+--
+-- Der fünfte Testbenutzer "neuling" hat noch KEIN Passwort. Er dient zum
+-- Ausprobieren von src/pages/passwort_setzen.php mit dem Freischaltcode
+-- "START123" (gültig bis 2027-12-31).
 -- ============================================================
 
-INSERT INTO benutzer (name, passwort_hash, rolle, aktiv) VALUES
-  ('admin',  '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'admin', 1),
-  ('lena',   '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'mitarbeiter', 1),
-  ('markus', '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'mitarbeiter', 1),
-  ('sabine', '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'mitarbeiter', 0);
+INSERT INTO benutzer (name, email, passwort_hash, rolle, aktiv, freischaltcode, code_gueltig_bis) VALUES
+  ('admin',   'admin@fitfuerinfo.local',  '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'admin', 1, NULL, NULL),
+  ('lena',    'lena@fitfuerinfo.local',   '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'mitarbeiter', 1, NULL, NULL),
+  ('markus',  'markus@fitfuerinfo.local', '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'mitarbeiter', 1, NULL, NULL),
+  ('sabine',  'sabine@fitfuerinfo.local', '$2y$10$ITlV2jXJ5DzmJCCEK3F7iObgbMpW4E.BDZrcDEwJNsuo77XlbDZIW', 'mitarbeiter', 0, NULL, NULL),
+  ('neuling', NULL,                       NULL, 'mitarbeiter', 1, 'START123', '2027-12-31 23:59:59');
 
 INSERT INTO software (name) VALUES
   ('VirtualBox'), ('Ubuntu'), ('Kali Linux'), ('Wireshark'), ('Office'), ('Visual Studio Code');
@@ -23,11 +28,11 @@ INSERT INTO raum_software (raum_id, software_id) VALUES
   (2,1),(2,3),(2,4),
   (3,5),(3,6);
 
-INSERT INTO kurs (titel, max_teilnehmer, ersteller_id) VALUES
-  ('Linux-Grundlagen',     12, 2),
-  ('IT-Sicherheit Praxis',  8, 3),
-  ('Office für Einsteiger', 16, 2),
-  ('Python für Admins',     10, 3);
+INSERT INTO kurs (titel, beschreibung, max_teilnehmer, ersteller_id) VALUES
+  ('Linux-Grundlagen',      'Einführung in Linux: Dateisystem, Shell und Benutzerverwaltung anhand von Ubuntu.', 12, 2),
+  ('IT-Sicherheit Praxis',  'Praktische Übungen zu Netzwerksicherheit mit Kali Linux und Wireshark.',           8, 3),
+  ('Office für Einsteiger', 'Grundlagen von Textverarbeitung, Tabellenkalkulation und Präsentation.',          16, 2),
+  ('Python für Admins',     'Automatisierung von Verwaltungsaufgaben mit Python in Visual Studio Code.',       10, 3);
 
 INSERT INTO kurs_eigentuemer (kurs_id, benutzer_id) VALUES
   (1,2), (2,3), (3,2), (3,3), (4,3);
