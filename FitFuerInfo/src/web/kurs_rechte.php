@@ -98,7 +98,7 @@ function zugriff_verweigert_seite($nachricht)
   .kopf h1 { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
   .kopf p { margin: 0; opacity: .9; font-size: 14px; }
   .kopf .welle { position: absolute; left: 0; bottom: -1px; width: 100%; height: 60px; display: block; }
-  .inhalt { max-width: 520px; margin: -40px auto 40px; padding: 0 16px; }
+  .inhalt { max-width: 520px; margin: 24px auto 40px; padding: 0 16px; }
   .karte {
     background: var(--card-bg);
     border-radius: 14px;

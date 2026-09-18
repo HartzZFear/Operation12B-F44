@@ -145,7 +145,7 @@ function aktueller_benutzer()
 function erfordere_login()
 {
     if (!ist_eingeloggt()) {
-        header('Location: ' . BASE_URL . '/src/pages/login.php');
+        header('Location: ' . BASE_URL . '/src/web/pages/login.php');
         exit;
     }
 }
@@ -159,7 +159,7 @@ function erfordere_admin()
 
     if (!ist_admin()) {
         $_SESSION['fehler'] = 'Diese Seite ist nur für den Systemverwalter zugänglich.';
-        header('Location: ' . BASE_URL . '/src/pages/kurse.php');
+        header('Location: ' . BASE_URL . '/src/web/pages/kurse.php');
         exit;
     }
 }

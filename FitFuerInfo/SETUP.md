@@ -64,8 +64,9 @@ git config user.name "DEIN-GITHUB-NAME"
 git config user.email "deine@mail.de"
 ```
 
-Das Projekt liegt jetzt unter `C:\xampp\htdocs\fitfuerinfo` und ist später
-im Browser unter `http://localhost/fitfuerinfo` erreichbar.
+Das Repo liegt jetzt unter `C:\xampp\htdocs\fitfuerinfo`. Die eigentliche
+Anwendung liegt darin im Ordner `FitFuerInfo\` und ist später im Browser
+unter `http://localhost/fitfuerinfo/FitFuerInfo` erreichbar.
 
 **Nicht als ZIP herunterladen.** Beim ZIP fehlt der `.git`-Ordner. Ohne den
 kann man nicht committen, nicht pushen und sieht keine Änderungen der
@@ -114,15 +115,15 @@ einem Rechner – das wäre bei der Abgabe auf dem Schulrechner nicht
 erreichbar. Synchronisiert wird über die SQL-Dateien im Repo.
 
 Die beiden Dateien liegen nach dem Klonen bereits unter
-`C:\xampp\htdocs\fitfuerinfo\db\`.
+`C:\xampp\htdocs\fitfuerinfo\FitFuerInfo\src\db\`.
 
 **Import:**
 
 1. `http://localhost/phpmyadmin` öffnen
-2. Reiter **Importieren** → `db/schema.sql` auswählen → OK
+2. Reiter **Importieren** → `src/db/schema.sql` auswählen → OK
    (legt die Datenbank `fitfuerinfo` mit allen Tabellen an)
 3. Links in der Baumansicht **`fitfuerinfo` anklicken**
-4. Wieder **Importieren** → `db/seed.sql` → OK (Testdaten)
+4. Wieder **Importieren** → `src/db/seed.sql` → OK (Testdaten)
 
 **Diese Meldungen sind normal und kein Fehler:**
 - `#1051 Unbekannte Tabelle` – kommt von `DROP TABLE IF EXISTS`. Bei einer
@@ -149,28 +150,28 @@ da sein: `benutzer`, `buchung`, `kurs`, `kurs_eigentuemer`, `kurs_software`,
 
 ## 5. Konfiguration anlegen und Selbsttest
 
-Die Datei `src/config.php` enthält die lokalen Zugangsdaten zur Datenbank.
-Sie liegt **nicht** im Repo, weil sie bei jedem anders aussehen kann. Im Repo
-liegt nur die Vorlage `src/config.example.php`.
+Die Datei `src/web/config.php` enthält die lokalen Zugangsdaten zur
+Datenbank. Sie liegt **nicht** im Repo, weil sie bei jedem anders aussehen
+kann. Im Repo liegt nur die Vorlage `src/web/config.example.php`.
 
 In der Eingabeaufforderung:
 
 ```
-cd C:\xampp\htdocs\fitfuerinfo
-copy src\config.example.php src\config.php
+cd C:\xampp\htdocs\fitfuerinfo\FitFuerInfo
+copy src\web\config.example.php src\web\config.php
 ```
 
 Bei einer frischen XAMPP-Installation passen die Standardwerte
 (Benutzer `root`, kein Passwort). Nur wer sein MySQL abgesichert hat, trägt
-in `src/config.php` seine eigenen Daten ein.
+in `src/web/config.php` seine eigenen Daten ein.
 
-**Selbsttest aufrufen:** `http://localhost/fitfuerinfo/test.php`
+**Selbsttest aufrufen:** `http://localhost/fitfuerinfo/src/web/tst/test.php`
 
 Die Seite prüft der Reihe nach:
 
 1. PHP-Version ist 5.6.x
 2. PDO-MySQL-Treiber ist geladen
-3. `src/config.php` ist vorhanden
+3. `src/web/config.php` ist vorhanden
 4. Verbindung zur Datenbank steht
 5. Alle neun Tabellen sind da
 6. Testdaten sind importiert
@@ -193,30 +194,30 @@ läuft die Einrichtung eines Kontos in zwei Schritten:
 1. **Admin legt das Konto an** (Benutzername, optional E-Mail, Rolle). Ein
    Passwort wird dabei nicht vergeben. Stattdessen erzeugt das System einen
    einmaligen **Freischaltcode** (8 Zeichen, siehe `erzeuge_freischaltcode()`
-   in `src/auth.php`) und zeigt ihn dem Admin an.
-2. **Mitarbeiter öffnet `src/pages/passwort_setzen.php`**, gibt seinen
+   in `src/web/auth.php`) und zeigt ihn dem Admin an.
+2. **Mitarbeiter öffnet `src/web/pages/passwort_setzen.php`**, gibt seinen
    Benutzernamen und den Freischaltcode ein und vergibt sein Passwort selbst.
    Der Code wird dabei entwertet (nur einmal gültig) und funktioniert danach
    nicht mehr.
-3. Ab da läuft die Anmeldung ganz normal über `src/pages/login.php` mit
+3. Ab da läuft die Anmeldung ganz normal über `src/web/pages/login.php` mit
    Benutzername und Passwort.
 
 Passwortregel laut Aufgabenstellung: mindestens `PW_MIN_LAENGE` (Standard: 4)
 Zeichen, darunter mindestens ein Kleinbuchstabe und mindestens eine Ziffer.
-Geprüft wird das über `pruefe_passwortregeln()` in `src/auth.php`.
+Geprüft wird das über `pruefe_passwortregeln()` in `src/web/auth.php`.
 
-**Zum Ausprobieren** liegt in `db/seed.sql` ein fünfter Testbenutzer bereit,
-der noch kein Passwort hat:
+**Zum Ausprobieren** liegt in `src/db/seed.sql` ein fünfter Testbenutzer
+bereit, der noch kein Passwort hat:
 
 | Benutzer  | Freischaltcode | Gültig bis  |
 |-----------|----------------|-------------|
 | `neuling` | `START123`     | 2027-12-31  |
 
 Damit lässt sich der komplette Ablauf lokal durchspielen:
-`src/pages/passwort_setzen.php` öffnen, `neuling` und `START123` eingeben,
-ein Passwort vergeben (z. B. `abc1`), danach mit `neuling` und diesem
-Passwort auf `src/pages/login.php` anmelden. Ein zweiter Versuch mit
-demselben Code schlägt danach erwartungsgemäß fehl.
+`src/web/pages/passwort_setzen.php` öffnen, `neuling` und `START123`
+eingeben, ein Passwort vergeben (z. B. `abc1`), danach mit `neuling` und
+diesem Passwort auf `src/web/pages/login.php` anmelden. Ein zweiter Versuch
+mit demselben Code schlägt danach erwartungsgemäß fehl.
 
 ---
 
@@ -232,15 +233,15 @@ neu. Ohne diese Regel hat nach drei Tagen jeder ein anderes Datenmodell.
 Struktur aus der lokalen DB zurück in die Datei schreiben:
 
 ```
-C:\xampp\mysql\bin\mysqldump -u root --no-data fitfuerinfo > db\schema.sql
-C:\xampp\mysql\bin\mysqldump -u root --no-create-info fitfuerinfo > db\seed.sql
+C:\xampp\mysql\bin\mysqldump -u root --no-data fitfuerinfo > src\db\schema.sql
+C:\xampp\mysql\bin\mysqldump -u root --no-create-info fitfuerinfo > src\db\seed.sql
 ```
 
 **2. SQL immer über `abfrage()`, Ausgaben immer über `h()`.**
-Beide Funktionen stehen in `src/db.php`:
+Beide Funktionen stehen in `src/web/db.php`:
 
 ```php
-require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../db.php';
 
 $kurse = abfrage('SELECT * FROM kurs WHERE ersteller_id = ?', array($id))->fetchAll();
 echo h($kurs['titel']);
@@ -285,18 +286,18 @@ Kostet fünf Sekunden und erspart die meisten Merge-Konflikte.
 
 | Seite | Zweck | Wer darf was |
 |---|---|---|
-| `src/pages/login.php` | Anmelden | jeder mit Benutzername/Passwort |
-| `src/pages/passwort_setzen.php` | Freischaltcode einlösen, eigenes Passwort setzen | jeder mit gültigem Code |
-| `src/pages/logout.php` | Abmelden | jeder Eingeloggte |
-| `src/pages/kurse.php` | Kursliste, Suche, Filter „nur eigene / alle" | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Kursen sichtbar |
-| `src/pages/kurs_bearbeiten.php` | Kurs anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: jeder Mitarbeiter. Bearbeiten: nur Eigentümer des Kurses oder Admin |
-| `src/pages/kurs_loeschen.php` | Sicherheitsabfrage + Löschen eines Kurses | nur Eigentümer des Kurses oder Admin |
+| `src/web/pages/login.php` | Anmelden | jeder mit Benutzername/Passwort |
+| `src/web/pages/passwort_setzen.php` | Freischaltcode einlösen, eigenes Passwort setzen | jeder mit gültigem Code |
+| `src/web/pages/logout.php` | Abmelden | jeder Eingeloggte |
+| `src/web/pages/kurse.php` | Kursliste, Suche, Filter „nur eigene / alle" | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Kursen sichtbar |
+| `src/web/pages/kurs_bearbeiten.php` | Kurs anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: jeder Mitarbeiter. Bearbeiten: nur Eigentümer des Kurses oder Admin |
+| `src/web/pages/kurs_loeschen.php` | Sicherheitsabfrage + Löschen eines Kurses | nur Eigentümer des Kurses oder Admin |
 
 **Eigentümer eines Kurses** sind der Ersteller (`kurs.ersteller_id`) und alle
 Einträge in `kurs_eigentuemer`. Nur Eigentümer und der Admin dürfen einen
 Kurs bearbeiten oder löschen; das wird serverseitig geprüft
-(`kurs_darf_verwalten()` in `src/kurse.php`), nicht nur durch Ein-/Ausblenden
-der Buttons. Ein Admin kann in `kurs_bearbeiten.php` zusätzlich mehrere
+(`kurs_darf_verwalten()` in `src/web/kurs_rechte.php`), nicht nur durch
+Ein-/Ausblenden der Buttons. Ein Admin kann in `kurs_bearbeiten.php` zusätzlich mehrere
 Mitarbeiter als Eigentümer eintragen (Checkbox-Block „Eigentümer", nur für
 den Admin sichtbar).
 
@@ -340,7 +341,7 @@ da nichts Unerwartetes dabei ist.
 | Push wird abgelehnt | Token falsch oder abgelaufen → Anmeldeinformationsverwaltung leeren |
 | Seite zeigt PHP-Code statt Ausgabe | Apache läuft nicht oder Datei liegt außerhalb von `htdocs` |
 | `.gitignore` heißt `gitignore.txt` | Windows hängt `.txt` an → im Explorer Dateiendungen einblenden und umbenennen |
-| `test.php` meldet "src/config.php fehlt" | Vorlage noch nicht kopiert → Abschnitt 5 |
+| `test.php` meldet "src/web/config.php fehlt" | Vorlage noch nicht kopiert → Abschnitt 5 |
 | `test.php` meldet PHP 8.x | Falsche XAMPP-Version installiert → Abschnitt 1 |
 
 ---
@@ -352,7 +353,7 @@ da nichts Unerwartetes dabei ist.
 - [ ] Git installiert, Repo nach `C:\xampp\htdocs\fitfuerinfo` geklont
 - [ ] `git config user.name` und `user.email` gesetzt
 - [ ] Personal Access Token erstellt und sicher abgelegt
-- [ ] `schema.sql` und `seed.sql` importiert, neun Tabellen sichtbar
-- [ ] `src/config.php` aus der Vorlage erstellt
-- [ ] `http://localhost/fitfuerinfo/test.php` zeigt siebenmal OK
+- [ ] `schema.sql` und `seed.sql` aus `src/db/` importiert, neun Tabellen sichtbar
+- [ ] `src/web/config.php` aus der Vorlage erstellt
+- [ ] `http://localhost/fitfuerinfo/src/web/tst/test.php` zeigt siebenmal OK
 - [ ] Kanban-Board auf Logineo geöffnet, eigene Karten zugewiesen

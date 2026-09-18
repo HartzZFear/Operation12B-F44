@@ -8,7 +8,7 @@
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../auth.php';
-require_once __DIR__ . '/../kurse.php';
+require_once __DIR__ . '/../kurs_rechte.php';
 
 erfordere_login();
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $fehler === '') {
   .kopf h1 { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
   .kopf p { margin: 0; opacity: .9; font-size: 14px; }
   .kopf .welle { position: absolute; left: 0; bottom: -1px; width: 100%; height: 60px; display: block; }
-  .inhalt { max-width: 520px; margin: -40px auto 40px; padding: 0 16px; }
+  .inhalt { max-width: 520px; margin: 24px auto 40px; padding: 0 16px; }
   .karte {
     background: var(--card-bg);
     border-radius: 14px;
