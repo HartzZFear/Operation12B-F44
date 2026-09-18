@@ -6,8 +6,10 @@ FÜR AUSFÜHRLICHE INFOS zB. Erstellen eines Kurses oder Administrieren
 von Usern VERWEIS AUF ./doc.pdf 
 
 ## Requirements: 
-Installed: XAMPP v.5.6.36 (Modules: Apache & MySQL)
-Installationspfad: U:/XAMPP_5.6.36
+1. Installed XAMPP v.5.6.36 (Modules: Apache & MySQL)
+**Download:** `sourceforge.net/projects/xampp/files/XAMPP Windows/5.6.36/`
+→ Datei: `xampp-win32-5.6.36-0-VC11-installer.exe`
+→ Installationspfad: U:/XAMPP_5.6.36 
 
 ## Initialisierung/Installation:
 - git clone https://github.com/HartzZFear/Operation12B-F44.git
