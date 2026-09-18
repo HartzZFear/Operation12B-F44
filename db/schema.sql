@@ -18,11 +18,14 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ------------------------------------------------------------
 
 CREATE TABLE benutzer (
-  id             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  name           VARCHAR(50)  NOT NULL,
-  passwort_hash  VARCHAR(255) NOT NULL,
-  rolle          ENUM('admin','mitarbeiter') NOT NULL DEFAULT 'mitarbeiter',
-  aktiv          TINYINT(1)   NOT NULL DEFAULT 1,
+  id                INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name              VARCHAR(50)  NOT NULL,
+  email             VARCHAR(100) NULL,
+  passwort_hash     VARCHAR(255) NULL,
+  rolle             ENUM('admin','mitarbeiter') NOT NULL DEFAULT 'mitarbeiter',
+  aktiv             TINYINT(1)   NOT NULL DEFAULT 1,
+  freischaltcode    VARCHAR(32)  NULL,
+  code_gueltig_bis  DATETIME     NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uk_benutzer_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -37,6 +40,7 @@ CREATE TABLE software (
 CREATE TABLE kurs (
   id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
   titel            VARCHAR(100) NOT NULL,
+  beschreibung     TEXT NULL,
   max_teilnehmer   INT UNSIGNED NOT NULL,
   ersteller_id     INT UNSIGNED NOT NULL,
   PRIMARY KEY (id),

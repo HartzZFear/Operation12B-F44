@@ -133,16 +133,17 @@ Die beiden Dateien liegen nach dem Klonen bereits unter
 **Kontrolle:** Links auf `fitfuerinfo` klicken. Es müssen **neun Tabellen**
 da sein: `benutzer`, `buchung`, `kurs`, `kurs_eigentuemer`, `kurs_software`,
 `raum`, `raum_bearbeiter`, `raum_software`, `software`.
-`benutzer` hat 4 Zeilen, `buchung` hat 7.
+`benutzer` hat 5 Zeilen, `buchung` hat 7.
 
-**Testkonten** (Passwort für alle: `test1`):
+**Testkonten** (Passwort für die ersten vier: `test1`):
 
-| Benutzer | Rolle       | aktiv |
-|----------|-------------|-------|
-| admin    | admin       | ja    |
-| lena     | mitarbeiter | ja    |
-| markus   | mitarbeiter | ja    |
-| sabine   | mitarbeiter | nein  |
+| Benutzer  | Rolle       | aktiv | Passwort              |
+|-----------|-------------|-------|------------------------|
+| admin     | admin       | ja    | `test1`                |
+| lena      | mitarbeiter | ja    | `test1`                |
+| markus    | mitarbeiter | ja    | `test1`                |
+| sabine    | mitarbeiter | nein  | `test1`                |
+| neuling   | mitarbeiter | ja    | noch keins – siehe Abschnitt 6 |
 
 ---
 
@@ -183,7 +184,43 @@ Abgabe wieder raus.
 
 ---
 
-## 6. Teamregeln
+## 6. Zugang und Passwörter
+
+Der Systemverwalter (Rolle `admin`) darf Zugang gewähren und entziehen, darf
+aber zu keinem Zeitpunkt ein Passwort kennen – auch nicht das erste. Deshalb
+läuft die Einrichtung eines Kontos in zwei Schritten:
+
+1. **Admin legt das Konto an** (Benutzername, optional E-Mail, Rolle). Ein
+   Passwort wird dabei nicht vergeben. Stattdessen erzeugt das System einen
+   einmaligen **Freischaltcode** (8 Zeichen, siehe `erzeuge_freischaltcode()`
+   in `src/auth.php`) und zeigt ihn dem Admin an.
+2. **Mitarbeiter öffnet `src/pages/passwort_setzen.php`**, gibt seinen
+   Benutzernamen und den Freischaltcode ein und vergibt sein Passwort selbst.
+   Der Code wird dabei entwertet (nur einmal gültig) und funktioniert danach
+   nicht mehr.
+3. Ab da läuft die Anmeldung ganz normal über `src/pages/login.php` mit
+   Benutzername und Passwort.
+
+Passwortregel laut Aufgabenstellung: mindestens `PW_MIN_LAENGE` (Standard: 4)
+Zeichen, darunter mindestens ein Kleinbuchstabe und mindestens eine Ziffer.
+Geprüft wird das über `pruefe_passwortregeln()` in `src/auth.php`.
+
+**Zum Ausprobieren** liegt in `db/seed.sql` ein fünfter Testbenutzer bereit,
+der noch kein Passwort hat:
+
+| Benutzer  | Freischaltcode | Gültig bis  |
+|-----------|----------------|-------------|
+| `neuling` | `START123`     | 2027-12-31  |
+
+Damit lässt sich der komplette Ablauf lokal durchspielen:
+`src/pages/passwort_setzen.php` öffnen, `neuling` und `START123` eingeben,
+ein Passwort vergeben (z. B. `abc1`), danach mit `neuling` und diesem
+Passwort auf `src/pages/login.php` anmelden. Ein zweiter Versuch mit
+demselben Code schlägt danach erwartungsgemäß fehl.
+
+---
+
+## 7. Teamregeln
 
 Diese sechs Punkte sind das, woran Gruppenprojekte sonst scheitern.
 
