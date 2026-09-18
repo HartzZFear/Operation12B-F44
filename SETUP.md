@@ -281,6 +281,31 @@ Kostet fünf Sekunden und erspart die meisten Merge-Konflikte.
 
 ---
 
+## 8. Seitenübersicht und Rechte
+
+| Seite | Zweck | Wer darf was |
+|---|---|---|
+| `src/pages/login.php` | Anmelden | jeder mit Benutzername/Passwort |
+| `src/pages/passwort_setzen.php` | Freischaltcode einlösen, eigenes Passwort setzen | jeder mit gültigem Code |
+| `src/pages/logout.php` | Abmelden | jeder Eingeloggte |
+| `src/pages/kurse.php` | Kursliste, Suche, Filter „nur eigene / alle" | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Kursen sichtbar |
+| `src/pages/kurs_bearbeiten.php` | Kurs anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: jeder Mitarbeiter. Bearbeiten: nur Eigentümer des Kurses oder Admin |
+| `src/pages/kurs_loeschen.php` | Sicherheitsabfrage + Löschen eines Kurses | nur Eigentümer des Kurses oder Admin |
+
+**Eigentümer eines Kurses** sind der Ersteller (`kurs.ersteller_id`) und alle
+Einträge in `kurs_eigentuemer`. Nur Eigentümer und der Admin dürfen einen
+Kurs bearbeiten oder löschen; das wird serverseitig geprüft
+(`kurs_darf_verwalten()` in `src/kurse.php`), nicht nur durch Ein-/Ausblenden
+der Buttons. Ein Admin kann in `kurs_bearbeiten.php` zusätzlich mehrere
+Mitarbeiter als Eigentümer eintragen (Checkbox-Block „Eigentümer", nur für
+den Admin sichtbar).
+
+Ein Kurs mit bestehenden Buchungen lässt sich nicht löschen (Fremdschlüssel
+`buchung.kurs_id` steht auf `RESTRICT`); `kurs_loeschen.php` prüft das vorher
+und zeigt stattdessen einen Hinweis, wie viele Buchungen betroffen sind.
+
+---
+
 ## Täglicher Ablauf
 
 ```
