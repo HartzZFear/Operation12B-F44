@@ -1,9 +1,9 @@
 # lokale Zugangsdaten - NIEMALS committen
-src/config.php
+/FitFuerInfo/src/config.php
 
 # Logs und Dumps
 *.log
-/db/dumps/
+FitFuerInfo/db/dumps/
 
 # Editor / OS
 .vscode/
