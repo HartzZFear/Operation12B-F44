@@ -5,8 +5,88 @@
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../kurs_rechte.php';
 
 erfordere_login();
+
+$meineId  = benutzer_id();
+$istAdmin = ist_admin();
+
+$suche     = isset($_GET['suche']) ? trim($_GET['suche']) : '';
+$nurEigene = isset($_GET['ownership']) && $_GET['ownership'] === 'own';
+
+$bedingungen = array();
+$parameter   = array();
+
+$sql = 'SELECT DISTINCT k.id, k.titel, k.beschreibung, k.max_teilnehmer, k.ersteller_id
+        FROM kurs k
+        LEFT JOIN kurs_eigentuemer ke ON ke.kurs_id = k.id';
+
+if ($suche !== '') {
+    $bedingungen[] = 'k.titel LIKE ?';
+    $parameter[]   = '%' . $suche . '%';
+}
+
+if ($nurEigene) {
+    $bedingungen[] = '(k.ersteller_id = ? OR ke.benutzer_id = ?)';
+    $parameter[]   = $meineId;
+    $parameter[]   = $meineId;
+}
+
+if (!empty($bedingungen)) {
+    $sql .= ' WHERE ' . implode(' AND ', $bedingungen);
+}
+
+$sql .= ' ORDER BY k.titel';
+
+$kurse = abfrage($sql, $parameter)->fetchAll();
+
+// Eigentuemer und Software je Kurs nachladen (fuer Berechtigungen und Chips).
+$eigentuemerJeKurs = array();
+$softwareJeKurs    = array();
+
+$kursIds = array();
+foreach ($kurse as $k) {
+    $kursIds[] = $k['id'];
+}
+
+if (!empty($kursIds)) {
+    $platzhalter = implode(',', array_fill(0, count($kursIds), '?'));
+
+    $zeilen = abfrage(
+        'SELECT kurs_id, benutzer_id FROM kurs_eigentuemer WHERE kurs_id IN (' . $platzhalter . ')',
+        $kursIds
+    )->fetchAll();
+    foreach ($zeilen as $zeile) {
+        $eigentuemerJeKurs[$zeile['kurs_id']][] = (int) $zeile['benutzer_id'];
+    }
+
+    $zeilen = abfrage(
+        'SELECT ks.kurs_id, s.name
+         FROM kurs_software ks
+         JOIN software s ON s.id = ks.software_id
+         WHERE ks.kurs_id IN (' . $platzhalter . ')
+         ORDER BY s.name',
+        $kursIds
+    )->fetchAll();
+    foreach ($zeilen as $zeile) {
+        $softwareJeKurs[$zeile['kurs_id']][] = $zeile['name'];
+    }
+}
+
+/**
+ * Nur fuer die Kartenanzeige: ist der eingeloggte Benutzer Ersteller oder
+ * in kurs_eigentuemer eingetragen? Die massgebliche, serverseitige Pruefung
+ * fuer Bearbeiten/Loeschen selbst steht in kurs_darf_verwalten() (kurse.php).
+ */
+function ist_eigene_karte($kurs, $eigentuemerJeKurs, $benutzerId)
+{
+    if ((int) $kurs['ersteller_id'] === (int) $benutzerId) {
+        return true;
+    }
+    return isset($eigentuemerJeKurs[$kurs['id']])
+        && in_array((int) $benutzerId, $eigentuemerJeKurs[$kurs['id']], true);
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -411,6 +491,64 @@ erfordere_login();
       margin-bottom: 20px;
     }
   }
+
+  /* ---- Ergänzungen für die Datenanbindung der Kursverwaltung ---- */
+  .course-meta {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .software-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 0;
+  }
+
+  .chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--teal);
+    background: rgba(26, 143, 156, 0.1);
+    border: 1px solid rgba(26, 143, 156, 0.25);
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 40px 20px;
+  }
+
+  a.btn-edit,
+  a.btn-delete {
+    display: inline-block;
+    text-decoration: none;
+  }
+
+  a.btn-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
+  .filter-submit {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 </style>
 </head>
 <body>
@@ -429,7 +567,7 @@ erfordere_login();
 
     <div class="header-actions">
       <a href="#" class="btn-header profile">Profile</a>
-      <a href="#" class="btn-header logout">Log Out</a>
+      <a href="logout.php" class="btn-header logout">Log Out</a>
     </div>
   </header>
 
@@ -460,190 +598,58 @@ erfordere_login();
 
     <section class="course-grid">
 
+<?php if (empty($kurse)): ?>
+      <p class="empty-state">Keine Kurse gefunden. Andere Suche oder anderen Filter probieren.</p>
+<?php else: ?>
+  <?php foreach ($kurse as $kurs): ?>
       <article class="course-card">
         <div class="course-body">
-          <h3 class="course-title">Kurs 1</h3>
-          <p class="course-desc">Dieser Kurs wurde vom eingeloggten User angelegt/Eigentümer</p>
+          <h3 class="course-title"><?php echo h($kurs['titel']); ?></h3>
+          <p class="course-meta">max. <?php echo (int) $kurs['max_teilnehmer']; ?> Teilnehmer</p>
+          <?php if ($kurs['beschreibung'] !== null && $kurs['beschreibung'] !== ''): ?>
+          <p class="course-desc"><?php echo h($kurs['beschreibung']); ?></p>
+          <?php endif; ?>
+          <?php if (!empty($softwareJeKurs[$kurs['id']])): ?>
+          <div class="software-chips">
+            <?php foreach ($softwareJeKurs[$kurs['id']] as $softwareName): ?>
+            <span class="chip"><?php echo h($softwareName); ?></span>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+          <?php if ($istAdmin || ist_eigene_karte($kurs, $eigentuemerJeKurs, $meineId)): ?>
           <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
+            <a href="kurs_bearbeiten.php?id=<?php echo (int) $kurs['id']; ?>" class="btn-edit">bearbeiten</a>
+            <a href="kurs_loeschen.php?id=<?php echo (int) $kurs['id']; ?>" class="btn-delete">löschen</a>
           </div>
+          <?php endif; ?>
         </div>
       </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 2</h3>
-          <p class="course-desc">Dieser Kurs wurde nicht vom eingeloggten User angelegt/ist nicht Eigentümer</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 3</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 4</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 5</h3>
-          <p class="course-desc">Dieser Kurs wurde vom eingeloggten User angelegt/Eigentümer</p>
-          <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 6</h3>
-          <p class="course-desc">Dieser Kurs wurde nicht vom eingeloggten User angelegt/ist nicht Eigentümer</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 7</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 8</h3>
-          <p class="course-desc">Dieser Kurs wurde vom eingeloggten User angelegt/Eigentümer</p>
-          <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 9</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 10</h3>
-          <p class="course-desc">Dieser Kurs wurde nicht vom eingeloggten User angelegt/ist nicht Eigentümer</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 11</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 12</h3>
-          <p class="course-desc">Dieser Kurs wurde vom eingeloggten User angelegt/Eigentümer</p>
-          <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 13</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 14</h3>
-          <p class="course-desc">Dieser Kurs wurde nicht vom eingeloggten User angelegt/ist nicht Eigentümer</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="course-card">
-        <div class="course-body">
-          <h3 class="course-title">Kurs 15</h3>
-          <p class="course-desc">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida</p>
-        <div class="course-actions">
-            <button type="button" class="btn-edit">bearbeiten</button>
-            <button type="button" class="btn-delete">löschen</button>
-          </div>
-        </div>
-      </article>
+  <?php endforeach; ?>
+<?php endif; ?>
 
     </section>
 
     <aside class="sidebar">
-      <p class="sidebar-label">Suche</p>
-      <input type="text" class="search-input" placeholder="Kursname.....">
+      <form method="get" action="kurse.php">
+        <p class="sidebar-label">Suche</p>
+        <input type="text" name="suche" class="search-input" placeholder="Kursname....." value="<?php echo h($suche); ?>">
 
-      <p class="sidebar-label">Eigentümerschaft</p>
-      <div class="radio-group">
-        <label class="radio-option">
-          <input type="radio" name="ownership" value="own">
-          Nur eigene
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="ownership" value="all" checked>
-          Alle
-        </label>
-      </div>
+        <p class="sidebar-label">Eigentümerschaft</p>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="ownership" value="own" onchange="this.form.submit()" <?php echo $nurEigene ? 'checked' : ''; ?>>
+            Nur eigene
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="ownership" value="all" onchange="this.form.submit()" <?php echo $nurEigene ? '' : 'checked'; ?>>
+            Alle
+          </label>
+        </div>
 
-      <button type="button" class="btn-add" aria-label="Kurs hinzufügen">+</button>
+        <button type="submit" class="filter-submit">Suchen</button>
+      </form>
+
+      <a href="kurs_bearbeiten.php" class="btn-add" aria-label="Kurs hinzufügen">+</a>
     </aside>
 
   </div>

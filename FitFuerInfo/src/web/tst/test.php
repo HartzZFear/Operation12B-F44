@@ -2,7 +2,7 @@
 /**
  * Selbsttest der lokalen Einrichtung.
  *
- * Aufruf im Browser: http://localhost/fitfuerinfo/test.php
+ * Aufruf im Browser: http://localhost/fitfuerinfo/src/web/tst/test.php
  *
  * Prueft PHP-Version, Datenbankverbindung, Tabellen und Testdaten.
  * Diese Datei ist nur ein Hilfsmittel fuer die Einrichtung und
@@ -36,20 +36,20 @@ pruefe(
 );
 
 // --- 3. config.php -----------------------------------------------------
-$configOk = file_exists(__DIR__ . '/src/config.php');
+$configOk = file_exists(__DIR__ . '/../config.php');
 pruefe(
-    'src/config.php vorhanden',
+    'src/web/config.php vorhanden',
     $configOk,
     $configOk
         ? 'gefunden'
-        : 'fehlt – src/config.example.php kopieren und als src/config.php speichern'
+        : 'fehlt – src/web/config.example.php kopieren und als src/web/config.php speichern'
 );
 
 $db = null;
 
 // --- 4. Datenbankverbindung -------------------------------------------
 if ($configOk && $pdoOk) {
-    require_once __DIR__ . '/src/db.php';
+    require_once __DIR__ . '/../db.php';
     try {
         $db = db();
         pruefe('Datenbankverbindung', true, 'verbunden mit ' . DB_NAME . ' auf ' . DB_HOST);
@@ -76,7 +76,7 @@ if ($db !== null) {
         count($fehlend) === 0,
         count($fehlend) === 0
             ? count($vorhanden) . ' Tabellen gefunden'
-            : 'Es fehlen: ' . implode(', ', $fehlend) . ' – bitte db/schema.sql importieren'
+            : 'Es fehlen: ' . implode(', ', $fehlend) . ' – bitte src/db/schema.sql importieren'
     );
 
     // --- 6. Testdaten --------------------------------------------------
@@ -92,7 +92,7 @@ if ($db !== null) {
             $seedOk,
             $seedOk
                 ? implode('  |  ', $zaehler)
-                : 'keine Daten – bitte db/seed.sql importieren'
+                : 'keine Daten – bitte src/db/seed.sql importieren'
         );
 
         // --- 7. Passworthash testen ------------------------------------

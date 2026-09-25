@@ -1,12 +1,19 @@
 USE fitfuerinfo;
 
+-- Erzwingt UTF-8 fuer diese Verbindung, unabhaengig davon, welche
+-- Verbindungskodierung der importierende Client (z. B. phpMyAdmin oder
+-- die mysql-Kommandozeile) sonst verwenden wuerde. Ohne das wurden
+-- Umlaute beim Import als kaputte Mehrfachbyte-Zeichen abgespeichert
+-- (z. B. "Übungen" -> "├£bungen").
+SET NAMES utf8mb4;
+
 -- ============================================================
 -- Testdaten
 -- Passwort für die vier bestehenden Testkonten: "test1"
 -- (Hash von password_hash('test1', PASSWORD_DEFAULT))
 --
 -- Der fünfte Testbenutzer "neuling" hat noch KEIN Passwort. Er dient zum
--- Ausprobieren von src/pages/passwort_setzen.php mit dem Freischaltcode
+-- Ausprobieren von src/web/pages/passwort_setzen.php mit dem Freischaltcode
 -- "START123" (gültig bis 2027-12-31).
 -- ============================================================
 

@@ -16,8 +16,8 @@
 // config.php laden. Fehlt sie, ist die Einrichtung nicht abgeschlossen.
 if (!file_exists(__DIR__ . '/config.php')) {
     die(
-        'Fehler: src/config.php fehlt. '
-        . 'Bitte src/config.example.php kopieren und als src/config.php speichern. '
+        'Fehler: src/web/config.php fehlt. '
+        . 'Bitte src/web/config.example.php kopieren und als src/web/config.php speichern. '
         . 'Details stehen in SETUP.md, Abschnitt 5.'
     );
 }
