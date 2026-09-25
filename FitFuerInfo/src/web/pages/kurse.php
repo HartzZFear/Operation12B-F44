@@ -561,8 +561,9 @@ function ist_eigene_karte($kurs, $eigentuemerJeKurs, $benutzerId)
     </div>
 
     <nav class="tab-group">
-      <a href="#" class="tab active">Kurse</a>
-      <a href="#" class="tab">Räume</a>
+      <a href="kurse.php" class="tab active">Kurse</a>
+      <a href="raeume.php" class="tab">Räume</a>
+      <a href="buchungen.php" class="tab">Belegung</a>
     </nav>
 
     <div class="header-actions">
