@@ -54,14 +54,21 @@ function kurs_darf_verwalten($kursId, $benutzerId, $istAdmin)
 }
 
 /**
- * Zeigt eine Seite im Design der Kursverwaltung mit einer verstaendlichen
- * Fehlermeldung und einem Link zurueck zur Kursliste, und beendet danach
- * das Skript. Wird verwendet, wenn eine serverseitige Rechtepruefung
+ * Zeigt eine Seite im Design der Anwendung mit einer verstaendlichen
+ * Fehlermeldung und einem Link zurueck zur passenden Liste, und beendet
+ * danach das Skript. Wird verwendet, wenn eine serverseitige Rechtepruefung
  * fehlschlaegt (z. B. Direktaufruf einer fremden Kurs-ID).
  *
+ * Die Funktion wird inzwischen aus allen drei Bereichen aufgerufen. Damit
+ * der Zurueck-Link dorthin fuehrt, wo der Benutzer hergekommen ist, geben
+ * die Buchungs- und Raumseiten ihr Ziel selbst mit; ohne Angabe bleibt es
+ * bei der Kursliste.
+ *
  * @param string $nachricht
+ * @param string $zurueckUrl  Ziel des Zurueck-Links (Dateiname im selben Ordner)
+ * @param string $zurueckText Beschriftung des Zurueck-Links
  */
-function zugriff_verweigert_seite($nachricht)
+function zugriff_verweigert_seite($nachricht, $zurueckUrl = 'kurse.php', $zurueckText = 'Zurück zu den Kursen')
 {
     ?>
 <!DOCTYPE html>
@@ -124,7 +131,7 @@ function zugriff_verweigert_seite($nachricht)
 <body>
   <div class="kopf">
     <h1>FitFürInfo</h1>
-    <p>Kursverwaltung</p>
+    <p>Kurs- und Raumverwaltung</p>
     <svg class="welle" viewBox="0 0 1440 200" preserveAspectRatio="none">
       <defs>
         <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -140,7 +147,7 @@ function zugriff_verweigert_seite($nachricht)
     <div class="karte">
       <h2 class="karte-titel">Zugriff verweigert</h2>
       <p class="karte-text"><?php echo h($nachricht); ?></p>
-      <a class="link-zurueck" href="kurse.php">Zurück zu den Kursen</a>
+      <a class="link-zurueck" href="<?php echo h($zurueckUrl); ?>"><?php echo h($zurueckText); ?></a>
     </div>
   </div>
 </body>
