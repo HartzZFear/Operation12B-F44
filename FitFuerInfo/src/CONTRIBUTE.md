@@ -292,6 +292,9 @@ Kostet fünf Sekunden und erspart die meisten Merge-Konflikte.
 | `src/web/pages/kurse.php` | Kursliste, Suche, Filter „nur eigene / alle" | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Kursen sichtbar |
 | `src/web/pages/kurs_bearbeiten.php` | Kurs anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: jeder Mitarbeiter. Bearbeiten: nur Eigentümer des Kurses oder Admin |
 | `src/web/pages/kurs_loeschen.php` | Sicherheitsabfrage + Löschen eines Kurses | nur Eigentümer des Kurses oder Admin |
+| `src/web/pages/raeume.php` | Raumliste mit Suche und Filtern (Software, Mindestanzahl Arbeitsplätze, „nur meine / alle"; alle kombinierbar) | Lesen: jeder Eingeloggte. „bearbeiten" nur bei Räumen, für die man als Bearbeiter eingetragen ist; „löschen" und der „+"-Knopf nur für den Admin |
+| `src/web/pages/raum_bearbeiten.php` | Raum anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: nur Admin. Bearbeiten: Admin und Einträge in `raum_bearbeiter`. Der Checkbox-Block „Bearbeiter" ist nur für den Admin sichtbar |
+| `src/web/pages/raum_loeschen.php` | Sicherheitsabfrage + Löschen eines Raums | nur Admin |
 | `src/web/pages/buchungen.php` | Belegungsliste mit Filtern (Raum, Kurs, „nur meine", ab Datum) | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Buchungen. „+"-Knopf nur, wenn man mindestens einen Kurs buchen darf |
 | `src/web/pages/buchung_bearbeiten.php` | Buchung anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: nur für eigene Kurse (Admin: alle). Bearbeiten: nur wer die Buchung angelegt hat, oder Admin |
 | `src/web/pages/buchung_loeschen.php` | Sicherheitsabfrage + Löschen einer Buchung | nur wer die Buchung angelegt hat, oder Admin |
@@ -308,8 +311,29 @@ Ein Kurs mit bestehenden Buchungen lässt sich nicht löschen (Fremdschlüssel
 `buchung.kurs_id` steht auf `RESTRICT`); `kurs_loeschen.php` prüft das vorher
 und zeigt stattdessen einen Hinweis, wie viele Buchungen betroffen sind.
 
+**Räume gehören niemandem.** Die Tabelle `raum` hat bewusst keine Spalte für
+einen Ersteller: Räume sind Betriebsmittel der Schule. Anlegen und Löschen
+darf deshalb nur der Systemverwalter. Wer die Ausstattung eines Raums pflegen
+darf – Arbeitsplätze und Softwarepakete –, steht in `raum_bearbeiter`; der
+Admin trägt das in `raum_bearbeiten.php` ein. Geprüft wird das serverseitig in
+`raum_darf_bearbeiten()` / `raum_darf_anlegen()` / `raum_darf_loeschen()`
+in `src/web/raum_rechte.php`. Ein Bearbeiter bekommt dadurch **keine** Rechte
+an den Buchungen des Raums (siehe Abschnitt 9).
+
+Ein Raum mit bestehenden Buchungen lässt sich nicht löschen (Fremdschlüssel
+`buchung.raum_id` steht auf `RESTRICT`); `raum_loeschen.php` prüft das vorher
+und zeigt stattdessen, wie viele Buchungen betroffen sind. `raum_software` und
+`raum_bearbeiter` hängen per `ON DELETE CASCADE` am Raum und verschwinden mit
+ihm.
+
 Die Tab-Leiste oben (**Kurse | Räume | Belegung**) ist auf allen Seiten gleich.
-„Belegung" zeigt auf `buchungen.php`.
+„Räume" zeigt auf `raeume.php`, „Belegung" auf `buchungen.php`.
+
+Schlägt eine serverseitige Rechteprüfung fehl, beendet
+`zugriff_verweigert_seite()` (in `src/web/kurs_rechte.php`) die Seite mit einer
+Meldung. Die Buchungs- und Raumseiten geben ihr Ziel für den Zurück-Link mit
+(`zugriff_verweigert_seite($meldung, 'raeume.php', 'Zurück zu den Räumen')`);
+ohne Angabe führt der Link zurück zur Kursliste.
 
 ---
 
@@ -342,7 +366,18 @@ die Software und Plätze für diesen Kurs mitbringen.
 Transaktion**. Vor der Prüfung werden die Zeilen von `raum` und `kurs` (in
 dieser Reihenfolge) mit `SELECT ... FOR UPDATE` gesperrt. Ohne die Sperre
 könnten zwei parallele Anfragen beide die Prüfung bestehen und sich danach
-überschneiden.
+überschneiden. `raum_bearbeiten.php` sperrt die Zeile des Raums genauso,
+bevor es dessen Ausstattung ändert.
+
+**Änderungen am Raum.** Die Regeln 4 und 5 hängen am Raum, nicht nur an der
+Buchung: Wer Arbeitsplätze reduziert oder ein Softwarepaket entfernt, kann
+damit eine längst gespeicherte Buchung ungültig machen. `raum_bearbeiten.php`
+schreibt die Änderung deshalb innerhalb einer Transaktion, prüft mit
+`raum_konflikte_mit_buchungen()` (in `src/web/raum_rechte.php`) alle **noch
+kommenden** Buchungen des Raums gegen den neuen Stand und macht bei einem
+Verstoß ein `rollBack()`. Wie `buchung_pruefen()` sammelt die Prüfung alle
+Verstöße ein statt beim ersten abzubrechen. Vergangene Buchungen bleiben als
+Historie unberührt und blockieren nichts.
 
 ### Rechte
 

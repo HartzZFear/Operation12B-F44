@@ -27,15 +27,27 @@ if ($istBearbeiten) {
     $buchung = abfrage('SELECT * FROM buchung WHERE id = ?', array($buchungId))->fetch();
 
     if (!$buchung) {
-        zugriff_verweigert_seite('Diese Buchung existiert nicht oder wurde bereits gelöscht.');
+        zugriff_verweigert_seite(
+            'Diese Buchung existiert nicht oder wurde bereits gelöscht.',
+            'buchungen.php',
+            'Zurück zur Belegung'
+        );
     }
     // Rechtepruefung serverseitig - nicht nur durch Ausblenden der Buttons
     // in buchungen.php.
     if (!buchung_darf_verwalten($buchungId, $meineId, $istAdmin)) {
-        zugriff_verweigert_seite('Sie haben diese Buchung nicht angelegt und können sie deshalb nicht bearbeiten.');
+        zugriff_verweigert_seite(
+            'Sie haben diese Buchung nicht angelegt und können sie deshalb nicht bearbeiten.',
+            'buchungen.php',
+            'Zurück zur Belegung'
+        );
     }
     if (buchung_ist_vergangen($buchung['start'])) {
-        zugriff_verweigert_seite('Diese Buchung liegt in der Vergangenheit und kann nicht mehr bearbeitet werden.');
+        zugriff_verweigert_seite(
+            'Diese Buchung liegt in der Vergangenheit und kann nicht mehr bearbeitet werden.',
+            'buchungen.php',
+            'Zurück zur Belegung'
+        );
     }
 }
 
@@ -86,7 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($kursId < 1) {
         $fehler[] = 'Bitte einen Kurs auswählen.';
     } elseif (!kurs_darf_verwalten($kursId, $meineId, $istAdmin)) {
-        zugriff_verweigert_seite('Sie sind nicht Eigentümer dieses Kurses und können dafür keine Buchung anlegen.');
+        zugriff_verweigert_seite(
+            'Sie sind nicht Eigentümer dieses Kurses und können dafür keine Buchung anlegen.',
+            'buchungen.php',
+            'Zurück zur Belegung'
+        );
     }
 
     if ($raumId < 1) {
