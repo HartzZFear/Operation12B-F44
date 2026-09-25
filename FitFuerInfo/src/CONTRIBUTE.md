@@ -292,6 +292,9 @@ Kostet fünf Sekunden und erspart die meisten Merge-Konflikte.
 | `src/web/pages/kurse.php` | Kursliste, Suche, Filter „nur eigene / alle" | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Kursen sichtbar |
 | `src/web/pages/kurs_bearbeiten.php` | Kurs anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: jeder Mitarbeiter. Bearbeiten: nur Eigentümer des Kurses oder Admin |
 | `src/web/pages/kurs_loeschen.php` | Sicherheitsabfrage + Löschen eines Kurses | nur Eigentümer des Kurses oder Admin |
+| `src/web/pages/buchungen.php` | Belegungsliste mit Filtern (Raum, Kurs, „nur meine", ab Datum) | Lesen: jeder Eingeloggte. Buttons „bearbeiten"/„löschen" nur bei eigenen Buchungen. „+"-Knopf nur, wenn man mindestens einen Kurs buchen darf |
+| `src/web/pages/buchung_bearbeiten.php` | Buchung anlegen (ohne `?id=`) oder bearbeiten (mit `?id=N`) | Anlegen: nur für eigene Kurse (Admin: alle). Bearbeiten: nur wer die Buchung angelegt hat, oder Admin |
+| `src/web/pages/buchung_loeschen.php` | Sicherheitsabfrage + Löschen einer Buchung | nur wer die Buchung angelegt hat, oder Admin |
 
 **Eigentümer eines Kurses** sind der Ersteller (`kurs.ersteller_id`) und alle
 Einträge in `kurs_eigentuemer`. Nur Eigentümer und der Admin dürfen einen
@@ -304,6 +307,60 @@ den Admin sichtbar).
 Ein Kurs mit bestehenden Buchungen lässt sich nicht löschen (Fremdschlüssel
 `buchung.kurs_id` steht auf `RESTRICT`); `kurs_loeschen.php` prüft das vorher
 und zeigt stattdessen einen Hinweis, wie viele Buchungen betroffen sind.
+
+Die Tab-Leiste oben (**Kurse | Räume | Belegung**) ist auf allen Seiten gleich.
+„Belegung" zeigt auf `buchungen.php`.
+
+---
+
+## 9. Buchungsregeln
+
+Eine Buchung belegt **einen Raum für einen Kurs in einem Zeitraum**. Sie wird
+nur gespeichert, wenn **alle fünf Regeln** erfüllt sind. Die Prüfung steht
+komplett in `buchung_pruefen()` in `src/web/buchung_logik.php` und läuft immer
+serverseitig – auch wenn das Formular manipuliert wurde.
+
+| # | Regel | Bedingung |
+|---|---|---|
+| 1 | **Zeit** | Wochentag Mo–Fr; Start ≥ 07:00, Ende ≤ 20:00; Minuten nur `00` oder `30`, Sekunden `00`; Start und Ende am selben Tag; Ende > Start; Start nicht in der Vergangenheit |
+| 2 | **Raum frei** | keine andere Buchung mit gleicher `raum_id` und `start < neues_ende AND ende > neuer_start` |
+| 3 | **Kurs frei** | keine andere Buchung mit gleicher `kurs_id` im selben Zeitraum (gleiche Bedingung), egal in welchem Raum |
+| 4 | **Software** | jede Software aus `kurs_software` des Kurses ist in `raum_software` des Raums vorhanden |
+| 5 | **Platz** | `kurs.max_teilnehmer <= raum.arbeitsplaetze` |
+
+Beim **Bearbeiten** wird die eigene Buchungs-ID bei den Regeln 2 und 3
+ausgeschlossen (Parameter `$ignorierId`) – sonst würde die Buchung mit sich
+selbst kollidieren.
+
+`buchung_pruefen()` bricht **nicht beim ersten Fehler ab**, sondern gibt alle
+Verstöße als Array zurück. Das Formular zeigt sie gesammelt an, damit man nicht
+dreimal hintereinander abschicken muss. Verletzt eine Buchung Regel 4 oder 5,
+blendet `buchung_bearbeiten.php` zusätzlich `passende_raeume()` ein – die Räume,
+die Software und Plätze für diesen Kurs mitbringen.
+
+**Gleichzeitige Buchungen.** Prüfen und Speichern laufen in **einer
+Transaktion**. Vor der Prüfung werden die Zeilen von `raum` und `kurs` (in
+dieser Reihenfolge) mit `SELECT ... FOR UPDATE` gesperrt. Ohne die Sperre
+könnten zwei parallele Anfragen beide die Prüfung bestehen und sich danach
+überschneiden.
+
+### Rechte
+
+| Aktion | Wer darf |
+|---|---|
+| **Anlegen** | Mitarbeiter nur für Kurse, bei denen `kurs_darf_verwalten()` true liefert; Admin für alle Kurse |
+| **Bearbeiten** | nur `buchung.benutzer_id == eingeloggter Benutzer`, oder Admin |
+| **Löschen** | nur `buchung.benutzer_id == eingeloggter Benutzer`, oder Admin |
+
+Wer einen Raum verwalten darf (`raum_bearbeiter`), hat **bewusst keine
+Sonderrechte** auf Buchungen – sonst könnte er fremde Kurstermine umbuchen.
+
+**Vergangene Buchungen** sind nicht mehr bearbeitbar (auch nicht vom Admin);
+löschen kann sie nur der Admin. Beides steckt in `buchung_darf_bearbeiten()`
+und `buchung_darf_loeschen()`, die auf `buchung_darf_verwalten()` aufsetzen.
+
+Beim Bearbeiten bleibt `buchung.benutzer_id` unverändert – die Buchung gehört
+weiterhin dem, der sie angelegt hat.
 
 ---
 
